@@ -436,6 +436,122 @@ document.addEventListener('DOMContentLoaded', async function() {
       template = template.slice(0, i) + resourceScript + template.slice(i);
     }
 
+    // The exported Claude Design document keeps editable <image-slot>
+    // placeholders, but their local state file is not part of this static
+    // deployment. Overlay the supplied, optimized shop photography without
+    // changing the generated layout or application code.
+    const helinImagePatch = `<style>
+      .helin-site-photo {
+        display: block;
+        object-fit: cover;
+        object-position: center;
+        pointer-events: none;
+      }
+    </style><script>
+      (() => {
+        const base = '/assets/images/';
+        const categoryImages = {
+          'halal-vlees': 'halal-meat.jpg',
+          'kip-gevogelte': 'poultry.jpg',
+          'groenten-fruit': 'produce.jpg',
+          'kruidenierswaren': 'groceries.jpg',
+          'brood-zuivel': 'bread-dairy.jpg',
+          'turkse-specialiteiten': 'turkish-specialties.jpg',
+          'dranken': 'drinks.jpg',
+          'diepvries': 'frozen-foods.jpg'
+        };
+        const productGroups = {
+          'halal-vlees': ['rundergehakt','lamskoteletten','lamsbout','kalfsentrecote','rundstoofvlees','sucuk','kofte','lamsspiesjes','gemarineerde-ribbetjes'],
+          'kip-gevogelte': ['kippenborst','kippenvleugels','hele-kip','kippengehakt','kalkoenfilet','gemarineerde-kip'],
+          'groenten-fruit': ['tomaten','komkommer','peterselie','aubergine','citroenen'],
+          'kruidenierswaren': ['baldo-rijst','bulgur','kikkererwten','zonnebloemolie','pul-biber','tomatenpuree'],
+          'brood-zuivel': ['pide','witte-kaas','yoghurt','kaymak'],
+          'turkse-specialiteiten': ['groene-olijven','zwarte-olijven','zwarte-thee','turkse-koffie','biber-salcasi','baklava'],
+          'dranken': ['ayran','frisdrank-bak','bronwater'],
+          'diepvries': ['borek','manti','diepvriesgroenten']
+        };
+        const staticImages = {
+          'v3-b-main': 'halal-meat.jpg',
+          'v3-b-a': 'lamb-chops.jpg',
+          'v3-b-b': 'poultry.jpg',
+          'v3-t-1': 'olive-oil.jpg',
+          'v3-t-2': 'turkish-specialties.jpg',
+          'v3-t-3': 'groceries.jpg',
+          'v3-store': 'bread-dairy.jpg',
+          'v3-store-2': 'drinks.jpg',
+          'v3-exterior': 'groceries.jpg'
+        };
+        const altByFile = {
+          'halal-meat.jpg': 'Verse halal vleeswaren in de slagerij',
+          'lamb-chops.jpg': 'Verse lamskoteletten',
+          'poultry.jpg': 'Verse kip en gevogelte',
+          'produce.jpg': 'Verse groenten en fruit',
+          'groceries.jpg': 'Kruidenierswaren in de supermarkt',
+          'bread-dairy.jpg': 'Brood en zuivel in de supermarkt',
+          'turkish-specialties.jpg': 'Turkse en mediterrane specialiteiten',
+          'olive-oil.jpg': 'Olijfolie en mediterrane producten',
+          'drinks.jpg': 'Drankenassortiment',
+          'frozen-foods.jpg': 'Diepvriesassortiment'
+        };
+        const specialProducts = {
+          'lamskoteletten': 'lamb-chops.jpg',
+          'lamsbout': 'lamb-chops.jpg',
+          'lamsspiesjes': 'lamb-chops.jpg',
+          'groene-olijven': 'olive-oil.jpg',
+          'zwarte-olijven': 'olive-oil.jpg'
+        };
+        function fileForSlot(id) {
+          if (staticImages[id]) return staticImages[id];
+          for (const prefix of ['v3-c-', 'v3-ch-']) {
+            if (id.startsWith(prefix)) return categoryImages[id.slice(prefix.length)] || '';
+          }
+          let slug = '';
+          if (id.startsWith('v3-p-')) slug = id.slice(5);
+          if (id.startsWith('v3-g-')) slug = id.slice(5).replace(/-\\d+$/, '');
+          if (!slug) return '';
+          if (specialProducts[slug]) return specialProducts[slug];
+          for (const category in productGroups) {
+            if (productGroups[category].includes(slug)) return categoryImages[category];
+          }
+          return '';
+        }
+        function fillSlot(slot) {
+          const id = slot.id || '';
+          const file = fileForSlot(id);
+          if (!file || slot.dataset.helinFilled === file) return;
+          const existing = slot.parentElement && slot.parentElement.querySelector('img[data-helin-for="' + id + '"]');
+          if (existing) existing.remove();
+          const img = document.createElement('img');
+          img.src = base + file;
+          img.alt = altByFile[file] || 'HELIN Supermarkt assortiment';
+          // Only ten shared files back all cards, so eager loading avoids
+          // placeholder flashes while the browser still reuses its cache.
+          img.loading = 'eager';
+          img.decoding = 'async';
+          img.className = 'helin-site-photo';
+          img.dataset.helinFor = id;
+          img.setAttribute('style', slot.getAttribute('style') || 'position:absolute;inset:0;width:100%;height:100%');
+          img.style.objectFit = 'cover';
+          img.style.objectPosition = file === 'olive-oil.jpg' ? '70% center' : 'center';
+          slot.style.visibility = 'hidden';
+          slot.dataset.helinFilled = file;
+          slot.insertAdjacentElement('afterend', img);
+        }
+        function fillAll(root) {
+          if (root.nodeType === 1 && root.matches && root.matches('image-slot')) fillSlot(root);
+          if (root.querySelectorAll) root.querySelectorAll('image-slot').forEach(fillSlot);
+        }
+        const start = () => {
+          fillAll(document);
+          new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(fillAll)))
+            .observe(document.documentElement, { childList: true, subtree: true });
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+        else start();
+      })();
+    <` + `/script>`;
+    template = template.replace(/<\/body>/i, helinImagePatch + '</body>');
+
     // Parse the template and swap the root element. Scripts inserted via
     // DOMParser/replaceWith are inert per spec — re-create each with
     // createElement so they execute, awaiting onload for src scripts to
