@@ -14,6 +14,94 @@
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="https://helinsupermarkt.be/">
   <title>HELIN SUPERMARKT &amp; SLAGERIJ — Halal supermarkt &amp; slagerij in Mortsel</title>
+  <script>
+  (function () {
+    var measurementId = 'G-9RW4QH6GML';
+    var consentKey = 'helin_analytics_consent';
+    var observer;
+
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      wait_for_update: 500
+    });
+
+    function loadAnalytics() {
+      if (window.__helinAnalyticsLoaded) return;
+      window.__helinAnalyticsLoaded = true;
+      window.gtag('consent', 'update', { analytics_storage: 'granted' });
+
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurementId;
+      document.head.appendChild(script);
+      window.gtag('js', new Date());
+      window.gtag('config', measurementId);
+    }
+
+    function finish(choice) {
+      try { localStorage.setItem(consentKey, choice); } catch (e) {}
+      if (choice === 'accepted') loadAnalytics();
+      var banner = document.getElementById('helin-cookie-banner');
+      if (banner) banner.remove();
+      if (observer) observer.disconnect();
+    }
+
+    function mountBanner() {
+      var choice = null;
+      try { choice = localStorage.getItem(consentKey); } catch (e) {}
+      if (choice === 'accepted') { loadAnalytics(); return; }
+      if (choice === 'rejected' || !document.body || document.getElementById('helin-cookie-banner')) return;
+
+      var banner = document.createElement('section');
+      banner.id = 'helin-cookie-banner';
+      banner.setAttribute('role', 'dialog');
+      banner.setAttribute('aria-label', 'Cookievoorkeuren');
+      banner.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:2147483647;max-width:720px;margin:auto;padding:16px 18px;background:#fbf7f1;color:#2c2520;border:1px solid #ddd0bd;border-radius:10px;box-shadow:0 16px 42px rgba(23,18,15,.32);font:14px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap';
+
+      var text = document.createElement('p');
+      text.style.cssText = 'margin:0;flex:1 1 380px';
+      text.innerHTML = '<strong>Analytische cookies</strong><br>Met uw toestemming gebruiken we Google Analytics om de website te verbeteren. Zonder toestemming worden geen analytische cookies geplaatst.';
+
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:9px;flex:0 0 auto';
+
+      var reject = document.createElement('button');
+      reject.type = 'button';
+      reject.textContent = 'Weigeren';
+      reject.style.cssText = 'min-height:42px;padding:9px 15px;border:1px solid #b3121d;border-radius:999px;background:#fff;color:#b3121d;font:600 14px/1 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;cursor:pointer';
+      reject.addEventListener('click', function () { finish('rejected'); });
+
+      var accept = document.createElement('button');
+      accept.type = 'button';
+      accept.textContent = 'Accepteren';
+      accept.style.cssText = 'min-height:42px;padding:9px 16px;border:1px solid #b3121d;border-radius:999px;background:#b3121d;color:#fff;font:700 14px/1 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;cursor:pointer';
+      accept.addEventListener('click', function () { finish('accepted'); });
+
+      actions.appendChild(reject);
+      actions.appendChild(accept);
+      banner.appendChild(text);
+      banner.appendChild(actions);
+      document.body.appendChild(banner);
+    }
+
+    function start() {
+      mountBanner();
+      observer = new MutationObserver(mountBanner);
+      observer.observe(document, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+      start();
+    }
+  }());
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
