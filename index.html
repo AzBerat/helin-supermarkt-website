@@ -201,6 +201,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const manifest = JSON.parse(manifestEl.textContent);
     let template = JSON.parse(templateEl.textContent);
 
+    // Keep the published contact details aligned with the customer's
+    // confirmed business information, without altering the exported design.
+    template = template
+      .replaceAll('Antwerpsestraat 13', 'Antwerpsestraat 11')
+      .replaceAll('https://maps.app.goo.gl/NQ3cCmjhaqwNH7yE7', 'https://www.google.com/maps/search/?api=1&query=Antwerpsestraat+11,+2640+Mortsel');
+
     // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
     // document's manifest; frame srcs carry an about:blank#<uuid> marker
     // instead of a substitutable uuid. Every document mints the blobs for
@@ -436,6 +442,24 @@ document.addEventListener('DOMContentLoaded', async function() {
       template = template.slice(0, i) + resourceScript + template.slice(i);
     }
 
+    // Keep the deployed business/contact configuration, while bringing the
+    // promotion set in line with the latest Claude Design export.
+    if (!template.includes('["aardbeien","groenten-fruit"')) {
+      template = template.replace(
+        /\n\];\n\nconst LI =/,
+        ',\n  ["aardbeien","groenten-fruit","fruit",["Aardbeien","Çilek","Strawberries"],["Doosje van 500 g","500 g kutu","500 g punnet"],"€ 2,95","€ 3,95","g500","-25%",0],\n' +
+        '  ["olijfolie","kruidenierswaren","olie",["Olijfolie extra vierge","Zeytinyağı natürel sızma","Extra virgin olive oil"],["Fles van 1 l","1 l şişe","1 l bottle"],"€ 7,95","€ 9,95","fles","-20%",0]\n];\n\nconst LI ='
+      );
+    }
+    template = template.replace(
+      /const PROMO_SLUGS = \[[^\]]+\];/,
+      'const PROMO_SLUGS = ["rundergehakt", "kippenborst", "lamskoteletten", "kippenvleugels", "olijfolie", "aardbeien"];'
+    );
+    template = template.replace(
+      /const POP_SLUGS = \[[^\]]+\];/,
+      'const POP_SLUGS = ["kippenvleugels", "lamskoteletten", "aardbeien", "rundergehakt", "olijfolie", "kippenborst"];'
+    );
+
     // The exported Claude Design document keeps editable <image-slot>
     // placeholders, but their local state file is not part of this static
     // deployment. Overlay the supplied, optimized shop photography without
@@ -451,54 +475,83 @@ document.addEventListener('DOMContentLoaded', async function() {
       (() => {
         const base = '/assets/images/';
         const categoryImages = {
-          'halal-vlees': 'halal-meat.jpg',
-          'kip-gevogelte': 'poultry.jpg',
-          'groenten-fruit': 'produce.jpg',
-          'kruidenierswaren': 'groceries.jpg',
-          'brood-zuivel': 'bread-dairy.jpg',
-          'turkse-specialiteiten': 'turkish-specialties.jpg',
-          'dranken': 'drinks.jpg',
-          'diepvries': 'frozen-foods.jpg'
+          'halal-vlees': 'category-halal-vlees.jpg',
+          'kip-gevogelte': 'category-kip-gevogelte.jpg',
+          'groenten-fruit': 'category-groenten-fruit.jpg',
+          'kruidenierswaren': 'category-kruidenierswaren.jpg',
+          'brood-zuivel': 'category-brood-zuivel.jpg',
+          'turkse-specialiteiten': 'category-turkse-specialiteiten.jpg',
+          'dranken': 'category-dranken.jpg',
+          'diepvries': 'category-diepvries.jpg'
         };
         const productGroups = {
           'halal-vlees': ['rundergehakt','lamskoteletten','lamsbout','kalfsentrecote','rundstoofvlees','sucuk','kofte','lamsspiesjes','gemarineerde-ribbetjes'],
           'kip-gevogelte': ['kippenborst','kippenvleugels','hele-kip','kippengehakt','kalkoenfilet','gemarineerde-kip'],
-          'groenten-fruit': ['tomaten','komkommer','peterselie','aubergine','citroenen'],
-          'kruidenierswaren': ['baldo-rijst','bulgur','kikkererwten','zonnebloemolie','pul-biber','tomatenpuree'],
+          'groenten-fruit': ['tomaten','komkommer','peterselie','aubergine','citroenen','aardbeien'],
+          'kruidenierswaren': ['baldo-rijst','bulgur','kikkererwten','zonnebloemolie','pul-biber','tomatenpuree','olijfolie'],
           'brood-zuivel': ['pide','witte-kaas','yoghurt','kaymak'],
           'turkse-specialiteiten': ['groene-olijven','zwarte-olijven','zwarte-thee','turkse-koffie','biber-salcasi','baklava'],
           'dranken': ['ayran','frisdrank-bak','bronwater'],
           'diepvries': ['borek','manti','diepvriesgroenten']
         };
         const staticImages = {
-          'v3-b-main': 'halal-meat.jpg',
-          'v3-b-a': 'lamb-chops.jpg',
-          'v3-b-b': 'poultry.jpg',
-          'v3-t-1': 'olive-oil.jpg',
-          'v3-t-2': 'turkish-specialties.jpg',
-          'v3-t-3': 'groceries.jpg',
-          'v3-store': 'bread-dairy.jpg',
-          'v3-store-2': 'drinks.jpg',
-          'v3-exterior': 'groceries.jpg'
+          'v3-b-main': 'editorial-halal-slagerij.jpg',
+          'v3-b-a': 'promo-lamskoteletten.jpg',
+          'v3-b-b': 'promo-kippenborst.jpg',
+          'v3-t-1': 'promo-olijfolie.jpg',
+          'v3-t-2': 'category-turkse-specialiteiten.jpg',
+          'v3-t-3': 'category-kruidenierswaren.jpg',
+          'v3-store': 'helin-gevel.jpg',
+          'v3-store-2': 'category-brood-zuivel.jpg',
+          'v3-exterior': 'helin-gevel.jpg'
         };
         const altByFile = {
-          'halal-meat.jpg': 'Verse halal vleeswaren in de slagerij',
-          'lamb-chops.jpg': 'Verse lamskoteletten',
-          'poultry.jpg': 'Verse kip en gevogelte',
-          'produce.jpg': 'Verse groenten en fruit',
-          'groceries.jpg': 'Kruidenierswaren in de supermarkt',
-          'bread-dairy.jpg': 'Brood en zuivel in de supermarkt',
-          'turkish-specialties.jpg': 'Turkse en mediterrane specialiteiten',
-          'olive-oil.jpg': 'Olijfolie en mediterrane producten',
-          'drinks.jpg': 'Drankenassortiment',
-          'frozen-foods.jpg': 'Diepvriesassortiment'
+          'category-halal-vlees.jpg': 'Verse halal vleeswaren in de slagerij',
+          'category-kip-gevogelte.jpg': 'Verse kip en gevogelte',
+          'category-groenten-fruit.jpg': 'Verse groenten en fruit',
+          'category-kruidenierswaren.jpg': 'Kruidenierswaren in de supermarkt',
+          'category-brood-zuivel.jpg': 'Brood en zuivel in de supermarkt',
+          'category-turkse-specialiteiten.jpg': 'Turkse en mediterrane specialiteiten',
+          'category-dranken.jpg': 'Drankenassortiment',
+          'category-diepvries.jpg': 'Diepvriesassortiment',
+          'editorial-halal-slagerij.jpg': 'De halal slagerij van HELIN Supermarkt',
+          'helin-gevel.jpg': 'Gevel van HELIN Supermarkt in Mortsel',
+          'promo-rundergehakt.jpg': 'Vers halal rundergehakt',
+          'promo-kippenborst.jpg': 'Verse kippenborst',
+          'promo-kippenvleugels.jpg': 'Verse kippenvleugels',
+          'promo-lamskoteletten.jpg': 'Verse lamskoteletten',
+          'promo-olijfolie.jpg': 'Extra vierge olijfolie',
+          'promo-aardbeien.jpg': 'Verse aardbeien'
         };
         const specialProducts = {
-          'lamskoteletten': 'lamb-chops.jpg',
-          'lamsbout': 'lamb-chops.jpg',
-          'lamsspiesjes': 'lamb-chops.jpg',
-          'groene-olijven': 'olive-oil.jpg',
-          'zwarte-olijven': 'olive-oil.jpg'
+          'rundergehakt': 'promo-rundergehakt.jpg',
+          'kippenborst': 'promo-kippenborst.jpg',
+          'kippenvleugels': 'promo-kippenvleugels.jpg',
+          'lamskoteletten': 'promo-lamskoteletten.jpg',
+          'lamsbout': 'promo-lamskoteletten.jpg',
+          'lamsspiesjes': 'promo-lamskoteletten.jpg',
+          'olijfolie': 'promo-olijfolie.jpg',
+          'aardbeien': 'promo-aardbeien.jpg',
+          'groene-olijven': 'promo-olijfolie.jpg',
+          'zwarte-olijven': 'promo-olijfolie.jpg'
+        };
+        const positionByFile = {
+          'category-halal-vlees.jpg': 'center 70%',
+          'category-kip-gevogelte.jpg': 'center 66%',
+          'category-groenten-fruit.jpg': 'center 58%',
+          'category-kruidenierswaren.jpg': 'center 55%',
+          'category-brood-zuivel.jpg': 'center 58%',
+          'category-turkse-specialiteiten.jpg': 'center 55%',
+          'category-dranken.jpg': 'center 55%',
+          'category-diepvries.jpg': 'center 52%',
+          'editorial-halal-slagerij.jpg': 'center 58%',
+          'helin-gevel.jpg': 'center 52%',
+          'promo-rundergehakt.jpg': 'right center',
+          'promo-kippenborst.jpg': 'right center',
+          'promo-kippenvleugels.jpg': 'right center',
+          'promo-lamskoteletten.jpg': 'right center',
+          'promo-olijfolie.jpg': 'right center',
+          'promo-aardbeien.jpg': 'right center'
         };
         function fileForSlot(id) {
           if (staticImages[id]) return staticImages[id];
@@ -532,7 +585,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           img.dataset.helinFor = id;
           img.setAttribute('style', slot.getAttribute('style') || 'position:absolute;inset:0;width:100%;height:100%');
           img.style.objectFit = 'cover';
-          img.style.objectPosition = file === 'olive-oil.jpg' ? '70% center' : 'center';
+          img.style.objectPosition = positionByFile[file] || 'center';
           slot.style.visibility = 'hidden';
           slot.dataset.helinFilled = file;
           slot.insertAdjacentElement('afterend', img);
@@ -545,6 +598,27 @@ document.addEventListener('DOMContentLoaded', async function() {
           fillAll(document);
           new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(fillAll)))
             .observe(document.documentElement, { childList: true, subtree: true });
+
+          // The SPA keeps the old scroll position when opening a category or
+          // product. Reset route changes twice (after layout and images) so a
+          // new page always starts at its heading on desktop and mobile.
+          document.addEventListener('click', event => {
+            const link = event.target && event.target.closest && event.target.closest('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href') || '';
+            if (!/^#\\/(?:assortiment|product)\\//.test(href) && href !== '#/') return;
+            const reset = () => {
+              window.scrollTo(0, 0);
+              if (document.documentElement) document.documentElement.scrollTop = 0;
+              if (document.body) document.body.scrollTop = 0;
+              if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+            };
+            requestAnimationFrame(() => {
+              reset();
+              requestAnimationFrame(reset);
+              setTimeout(reset, 120);
+            });
+          }, true);
         };
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
         else start();
