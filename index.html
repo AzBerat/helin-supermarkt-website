@@ -203,9 +203,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Keep the published contact details aligned with the customer's
     // confirmed business information, without altering the exported design.
+    // Prices and calculated discount claims stay hidden until the shop
+    // supplies current, verified sale and reference-price information.
     template = template
       .replaceAll('Antwerpsestraat 13', 'Antwerpsestraat 11')
-      .replaceAll('https://maps.app.goo.gl/NQ3cCmjhaqwNH7yE7', 'https://www.google.com/maps/search/?api=1&query=Antwerpsestraat+11,+2640+Mortsel');
+      .replaceAll('https://maps.app.goo.gl/NQ3cCmjhaqwNH7yE7', 'https://www.google.com/maps/search/?api=1&query=Antwerpsestraat+11,+2640+Mortsel')
+      .replace(
+        'price: p.price, was: p.was, unit: UNITS[p.unitKey][i] || UNITS[p.unitKey][0],',
+        'price: lang === "tr" ? "Mağazada" : lang === "en" ? "In store" : "In de winkel", was: "", unit: "",'
+      )
+      .replaceAll('promo: p.promo', 'promo: false')
+      .replaceAll('discount: p.promo', 'discount: ""');
 
     // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
     // document's manifest; frame srcs carry an about:blank#<uuid> marker
