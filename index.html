@@ -145,6 +145,81 @@ document.addEventListener('DOMContentLoaded', async function() {
         }());
       <\/script>`;
 
+    const openingStatusPatch = `
+      <script>
+        (function keepOpeningStatusCurrent(){
+          var OPEN_MINUTE = 8 * 60;
+          var CLOSE_MINUTE = 20 * 60;
+          var labels = {
+            nl: { open: 'Vandaag open', closed: 'Nu gesloten', every: 'Elke dag geopend', upperOpen: 'VANDAAG OPEN', upperClosed: 'NU GESLOTEN' },
+            tr: { open: 'Bugün açık', closed: 'Şu anda kapalı', every: 'Her gün açık', upperOpen: 'BUGÜN AÇIK', upperClosed: 'ŞU ANDA KAPALI' },
+            en: { open: 'Open today', closed: 'Closed now', every: 'Open every day', upperOpen: 'OPEN TODAY', upperClosed: 'CLOSED NOW' }
+          };
+          var allStatusLabels = [];
+          Object.keys(labels).forEach(function(lang){
+            var item = labels[lang];
+            allStatusLabels.push(item.open, item.closed, item.upperOpen, item.upperClosed);
+          });
+
+          function brusselsMinutes(){
+            var parts = new Intl.DateTimeFormat('en-GB', {
+              timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(new Date());
+            var hour = Number(parts.find(function(part){ return part.type === 'hour'; }).value);
+            var minute = Number(parts.find(function(part){ return part.type === 'minute'; }).value);
+            return hour * 60 + minute;
+          }
+
+          function languageFor(text){
+            if (/Bugün|Şu anda|BUGÜN|ŞU ANDA|Her gün/.test(text)) return 'tr';
+            if (/Open today|Closed now|OPEN TODAY|CLOSED NOW|Open every day/.test(text)) return 'en';
+            return 'nl';
+          }
+
+          function setVisual(container, open){
+            if (!container) return;
+            var onDark = container.closest('footer') || container.closest('[data-dc-tpl="186"]') || container.closest('[data-dc-tpl="354"]');
+            container.style.color = open ? (onDark ? '#bfe9cf' : '#1c7a45') : (onDark ? '#f3a6ac' : '#a8131f');
+            container.querySelectorAll('span').forEach(function(dot){
+              if (dot.style.borderRadius === '50%' && dot.style.width === '7px') {
+                dot.style.background = open ? '#2fa15f' : '#d9434f';
+                dot.style.animation = open ? 'helin-pulse 2.4s ease-in-out infinite' : 'none';
+              }
+            });
+          }
+
+          function apply(){
+            var minuteNow = brusselsMinutes();
+            var open = minuteNow >= OPEN_MINUTE && minuteNow < CLOSE_MINUTE;
+            document.querySelectorAll('.sc-interp').forEach(function(textNode){
+              var current = (textNode.textContent || '').trim();
+              if (allStatusLabels.indexOf(current) === -1) return;
+              var lang = languageFor(current);
+              var upper = current === current.toUpperCase();
+              var desired = open
+                ? (upper ? labels[lang].upperOpen : labels[lang].open)
+                : (upper ? labels[lang].upperClosed : labels[lang].closed);
+              if (textNode.textContent !== desired) textNode.textContent = desired;
+              setVisual(textNode.parentElement, open);
+            });
+
+            document.querySelectorAll('[data-dc-tpl="17"]').forEach(function(wrapper){
+              var textNode = wrapper.querySelector('.sc-interp');
+              if (!textNode) return;
+              var text = textNode.textContent || '';
+              var lang = languageFor(text);
+              var desired = (open ? labels[lang].every : labels[lang].closed) + ' · 08:00–20:00';
+              if (textNode.textContent !== desired) textNode.textContent = desired;
+              setVisual(wrapper, open);
+            });
+          }
+
+          apply();
+          new MutationObserver(apply).observe(document.documentElement, { childList: true, characterData: true, subtree: true });
+          setInterval(apply, 60000);
+        }());
+      <\/script>`;
+
     // Keep the published contact details aligned with the customer's
     // confirmed business information, add crawlable legal links and remove
     // unused third-party connection hints from the generated export.
@@ -212,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
           }
         </style>`)
-      .replace('</x-dc>', '</x-dc>' + legalFooter);
+      .replace('</x-dc>', '</x-dc>' + legalFooter + openingStatusPatch);
 
     // Nested page bundles (iframe targets). Each ships ONCE, in the ROOT
     // document's manifest; frame srcs carry an about:blank#<uuid> marker
