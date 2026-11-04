@@ -23,8 +23,8 @@
     section.id = 'helin-acties';
     section.className = 'helin-acties';
     section.setAttribute('aria-labelledby','helin-acties-title');
-    section.innerHTML = '<div class="helin-acties-inner"><div class="helin-acties-head"><div><p class="helin-acties-kicker">HELIN SUPERMARKT &amp; SLAGERIJ</p><h2 id="helin-acties-title">Onze promoties</h2><p>Ontdek onze aanbiedingen in Mortsel. Geldig t.e.m. 9 november 2026.</p></div><p class="helin-acties-place">Antwerpsestraat 11<br>2640 Mortsel</p></div><div class="helin-acties-grid helin-meat-grid">' + products.map(function(p, i) {
-      return (i === 4 ? '</div><div class="helin-acties-grid helin-other-grid">' : '') + '<article class="helin-actie"><div class="helin-actie-photo' + (i < 4 ? ' helin-meat' : '') + '"><img src="' + p[3] + '" alt="' + p[0] + '" loading="lazy"></div><div class="helin-actie-body"><h3>' + p[0] + '</h3><div class="helin-actie-price">€ ' + p[1] + '</div><p>' + p[2] + '</p></div></article>';
+    section.innerHTML = '<div class="helin-acties-inner"><div class="helin-acties-head"><div><p class="helin-acties-kicker">HELIN SUPERMARKT &amp; SLAGERIJ</p><h2 id="helin-acties-title">Onze promoties</h2><p>Ontdek onze aanbiedingen in Mortsel. Geldig t.e.m. 9 november 2026.</p></div><p class="helin-acties-place">Antwerpsestraat 11<br>2640 Mortsel</p></div><div class="helin-acties-grid">' + products.map(function(p, i) {
+      return '<article class="helin-actie"><div class="helin-actie-photo' + (i < 4 ? ' helin-meat' : '') + '"><img src="' + p[3] + '" alt="' + p[0] + '" loading="lazy"></div><div class="helin-actie-body"><h3>' + p[0] + '</h3><div class="helin-actie-price">€ ' + p[1] + '</div><p>' + p[2] + '</p></div></article>';
     }).join('') + '</div></div>';
     anchor.parentNode.insertBefore(section, anchor);
   }
