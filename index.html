@@ -818,7 +818,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         else start();
       })();
     <` + `/script>`;
-    template = template.replace(/<\/body>/i, helinImagePatch + '<link rel="stylesheet" href="/assets/acties.css?v=20261104c"><script src="/assets/acties.js?v=20261104c"><\/script></body>');
+    // The November promotion ended on 9 November. Do not load its prices or UI.
+    template = template.replace(/<\/body>/i, helinImagePatch + '</body>');
 
     // Parse the template and swap the root element. Scripts inserted via
     // DOMParser/replaceWith are inert per spec — re-create each with
